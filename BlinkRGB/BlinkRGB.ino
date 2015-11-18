@@ -1,4 +1,8 @@
 /*
+This is a simple example on how to blink the RGB led on the ESP12-E
+
+ based on:
+
  ESP8266 Blink by Simon Peter
  Blink the blue LED on the ESP-01 module
  This example code is in the public domain
