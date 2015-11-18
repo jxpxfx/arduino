@@ -1,3 +1,4 @@
+// Measures the distance using the ultrasonic sensor. This approaches uses the NewPing library.
 // ---------------------------------------------------------------------------
 // Example NewPing library sketch that does a ping about 20 times per second.
 // ---------------------------------------------------------------------------
