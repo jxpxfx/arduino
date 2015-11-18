@@ -41,7 +41,7 @@ void blink()
 {
   Serial.println("Good night. Will sleep now.");
   
-  ESP.deepSleep(300000000, WAKE_RF_DEFAULT); // Sleep for 120 seconds
+  ESP.deepSleep(300000000, WAKE_RF_DEFAULT); // Sleep for 5 minutes
 }
 void connectWifi(){
   pinMode(RED, OUTPUT);
