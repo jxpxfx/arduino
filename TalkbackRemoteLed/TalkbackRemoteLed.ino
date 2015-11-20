@@ -37,21 +37,7 @@ String response;
 void setup() {
   pinMode(8, OUTPUT);
   
-  // Open serial communications and wait for port to open:
-  Serial.begin(9600);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for Leonardo only
-  }
-
-  // start the Ethernet connection:
-  if (Ethernet.begin(mac) == 0) {
-    Serial.println("Failed to configure Ethernet using DHCP");
-    // no point in carrying on, so do nothing forevermore:
-    // try to congifure using IP address instead of DHCP:
-    Ethernet.begin(mac, ip);
-  }
-  // give the Ethernet shield a second to initialize:
-  delay(1000);
+  ethernetStartup();
   
   connect();
 }
@@ -67,8 +53,7 @@ void loop()
       client.stop();
       Serial.println("after stop");
     }
-  } else {
-    
+  } else {    
     connect();  
   }
   delay(500);
@@ -118,3 +103,22 @@ void processResponse() {
   }
   response = "";
 }
+
+void ethernetStartup() {
+    // Open serial communications and wait for port to open:
+  Serial.begin(9600);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for Leonardo only
+  }
+
+  // start the Ethernet connection:
+  if (Ethernet.begin(mac) == 0) {
+    Serial.println("Failed to configure Ethernet using DHCP");
+    // no point in carrying on, so do nothing forevermore:
+    // try to congifure using IP address instead of DHCP:
+    Ethernet.begin(mac, ip);
+  }
+  // give the Ethernet shield a second to initialize:
+  delay(1000);
+}
+
