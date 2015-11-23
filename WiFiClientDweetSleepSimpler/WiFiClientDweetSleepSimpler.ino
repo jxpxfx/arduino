@@ -7,8 +7,8 @@
  */
 #include <ESP8266WiFi.h>
 
-const char* ssid     = "bacteria";
-const char* password = "contaminado";
+const char* ssid     = "ssid";
+const char* password = "password";
 
 const char* host = "www.dweet.io";
 
@@ -98,7 +98,7 @@ void updateDweet(){
   // We now create a URI for the request
   sensorValue = analogRead(analogInPin);
   int r = millis();
-  String url = "/dweet/for/9ae7f0b5-82d8-4f01-82fa-d28b6043c53d?counter=";
+  String url = "/dweet/for/MY_THING?counter=";
   url += r;
   url += "&light=";
   url += sensorValue;
