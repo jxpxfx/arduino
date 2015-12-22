@@ -9,7 +9,7 @@ const int VERTICAL = 13;
 void setup(){
   pinMode(VERTICAL, OUTPUT);
   digitalWrite(VERTICAL, LOW);
-Wire.begin();
+Wire.begin(4,5);
 Serial.begin(9600);
 Wire.beginTransmission(accel_module);
 Wire.write(0x2D);
