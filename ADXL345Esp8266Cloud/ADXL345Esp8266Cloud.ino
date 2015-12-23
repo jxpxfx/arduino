@@ -29,7 +29,47 @@ char DATAY1 = 0x35;    //Y-Axis Data 1
 char DATAZ0 = 0x36;    //Z-Axis Data 0
 char DATAZ1 = 0x37;    //Z-Axis Data 1
 
+#include <ESP8266WiFi.h>
+#include "DHT.h"
+
+#define DHTPIN 2 //GPIO2
+#define DHTTYPE DHT22
+DHT dht(DHTPIN, DHTTYPE);
+String writeAPIKey = "";
+
+float h;
+float t;
+int value = 0;
+float angleX = 0.0;
+
+const char* ssid     = "";
+const char* password = "";
+
+const char* host = "api.thingspeak.com";
+
+//sensor
+const int analogInPin = A0;
+int sensorValue = 0;        // value read from the pot
+
 void setup()
+{
+  setupAccel();
+  dht.begin();
+  readAccel();  
+  Serial.println("start...");
+  connectWifi();
+  updateDweet();
+  //Serial.println("goint to sleep. good night.");
+  ESP.deepSleep(60*1000000, WAKE_RF_DEFAULT); // Sleep for 1 minutes
+}
+
+void loop()
+{
+  //readAccel();  // read the x/y/z tilt
+  //delay(200);   // only read every 200ms
+}
+
+void setupAccel()
 {
   pinMode (RED, OUTPUT);
   pinMode (GREEN, OUTPUT);
@@ -50,12 +90,6 @@ void setup()
   writeTo(POWER_CTL, 0x08);
 }
 
-void loop()
-{
-  readAccel();  // read the x/y/z tilt
-  delay(200);   // only read every 200ms
-}
-
 void readAccel()
 {
   uint8_t howManyBytesToRead = 6;
@@ -68,7 +102,7 @@ void readAccel()
   short y = (((short)_buff[3]) << 8) | _buff[2];
   short z = (((short)_buff[5]) << 8) | _buff[4];
 
-  float angleX = x * 2. / 512;
+  angleX = x * 2. / 512;
   Serial.print("x: ");
   //Serial.print( x * 2. / 512 );
   Serial.print( angleX );
@@ -115,5 +149,142 @@ void readFrom(byte address, int num, byte _buff[])
     i++;
   }
   Wire.endTransmission(); // end transmission
+}
+
+void connectWifi(){
+  pinMode(RED, OUTPUT);
+  pinMode(GREEN, OUTPUT);
+  pinMode(BLUE, OUTPUT);
+  digitalWrite(RED, LOW);
+  digitalWrite(GREEN, LOW);
+  digitalWrite(BLUE, LOW);
+  
+  Serial.begin(9600);
+  delay(10);
+
+  // We start by connecting to a WiFi network
+  digitalWrite(RED, HIGH);
+  Serial.println();
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  
+  WiFi.begin(ssid, password);
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("WiFi connected");  
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+  digitalWrite(RED, LOW);
+  blinkLed(BLUE);
+
+}
+
+void updateDweet(){
+  Serial.print("updateDweet method");
+  ++value;
+
+  Serial.print("connecting to ");
+  Serial.println(host);
+  
+  // Use WiFiClient class to create TCP connections
+  WiFiClient client;
+  const int httpPort = 80;
+  if (!client.connect(host, httpPort)) {
+    Serial.println("connection failed");
+    blinkLed(RED);
+    return;
+  }
+
+  readSensorData();
+  
+  // We now create a URI for the request
+  sensorValue = analogRead(analogInPin);
+  readSensorData();
+  String tsData = "field1=";
+  tsData += angleX;
+  //tsData += "&field2=";
+  //tsData += h;
+  //tsData += "&field3=";
+  //tsData += sensorValue;
+  
+  Serial.println("connected");
+  client.print("POST /update HTTP/1.1\n");
+  client.print("Host: api.thingspeak.com\n");
+  client.print("Connection: close\n");
+  client.print("X-THINGSPEAKAPIKEY: "+writeAPIKey+"\n");
+  client.print("Content-Type: application/x-www-form-urlencoded\n");
+  client.print("Content-Length: ");
+  client.print(tsData.length());
+  client.print("\n\n");
+
+  client.print(tsData);
+  delay(10);
+  
+  // Read all the lines of the reply from server and print them to Serial
+  while(client.available()){
+    String line = client.readStringUntil('\r');
+    Serial.print(line);
+  }
+  
+  Serial.println();
+  blinkLed(GREEN);
+  Serial.println("closing connection");
+  delay(2000);
+}
+
+void blinkLed(int color) {
+  Serial.println("will blink now...");
+  for (int i = 0; i < 2; i++) {
+    digitalWrite(color, HIGH);
+    delay(100);
+    digitalWrite(color, LOW);
+    delay(50);
+  }
+}
+
+void turnOff(int pin) {
+  pinMode(pin, OUTPUT);
+  digitalWrite(pin, 1);
+}
+
+void readSensorData() {
+    // Reading temperature or humidity takes about 250 milliseconds!
+  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+  h = dht.readHumidity();
+  // Read temperature as Celsius (the default)
+  t = dht.readTemperature();
+  // Read temperature as Fahrenheit (isFahrenheit = true)
+  float f = dht.readTemperature(true);
+
+  // Check if any reads failed and exit early (to try again).
+  if (isnan(h) || isnan(t) || isnan(f)) {
+    Serial.println("Failed to read from DHT sensor!");
+    return;
+  }
+
+  // Compute heat index in Fahrenheit (the default)
+  float hif = dht.computeHeatIndex(f, h);
+  // Compute heat index in Celsius (isFahreheit = false)
+  float hic = dht.computeHeatIndex(t, h, false);
+
+  Serial.print("Humidity: ");
+  Serial.print(h);
+  Serial.print(" %\t");
+  Serial.print("Temperature: ");
+  Serial.print(t);
+  Serial.print(" *C ");
+  Serial.print(f);
+  Serial.print(" *F\t");
+  Serial.print("Heat index: ");
+  Serial.print(hic);
+  Serial.print(" *C ");
+  Serial.print(hif);
+  Serial.println(" *F");
 }
 
