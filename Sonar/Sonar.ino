@@ -2,8 +2,8 @@
 
 //LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
-int pingPin = 3;
-int inPin = 2;
+int pingPin = 5;
+int inPin = 4;
 long duration, inches, cm;
 int indec, cmdec;
 int inchconv = 147;

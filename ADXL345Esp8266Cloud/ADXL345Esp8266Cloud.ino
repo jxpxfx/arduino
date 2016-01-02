@@ -33,12 +33,14 @@ char DATAZ1 = 0x37;    //Z-Axis Data 1
 #include "DHT.h"
 
 #define DHTPIN 2 //GPIO2
-#define DHTTYPE DHT22
+#define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 String writeAPIKey = "";
 
 float h;
 float t;
+float f;
+
 int value = 0;
 float angleX = 0.0;
 
@@ -60,7 +62,7 @@ void setup()
   connectWifi();
   updateDweet();
   //Serial.println("goint to sleep. good night.");
-  ESP.deepSleep(60*1000000, WAKE_RF_DEFAULT); // Sleep for 1 minutes
+  ESP.deepSleep(300*1000000, WAKE_RF_DEFAULT); // Sleep for 1 minutes
 }
 
 void loop()
@@ -201,19 +203,18 @@ void updateDweet(){
     return;
   }
 
-  readSensorData();
-  
   // We now create a URI for the request
   sensorValue = analogRead(analogInPin);
   readSensorData();
   String tsData = "field1=";
   tsData += angleX;
-  //tsData += "&field2=";
-  //tsData += h;
-  //tsData += "&field3=";
-  //tsData += sensorValue;
+  tsData += "&field2=";
+  tsData += t;
+  tsData += "&field3=";
+  tsData += h;
   
-  Serial.println("connected");
+  Serial.print("connected. angleX=");
+  Serial.println(angleX);
   client.print("POST /update HTTP/1.1\n");
   client.print("Host: api.thingspeak.com\n");
   client.print("Connection: close\n");
@@ -254,19 +255,23 @@ void turnOff(int pin) {
 }
 
 void readSensorData() {
+  do {
+    Serial.println("Trying to read from DHT sensor!");
+    delay(2000);
     // Reading temperature or humidity takes about 250 milliseconds!
-  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  h = dht.readHumidity();
-  // Read temperature as Celsius (the default)
-  t = dht.readTemperature();
-  // Read temperature as Fahrenheit (isFahrenheit = true)
-  float f = dht.readTemperature(true);
+    // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+    h = dht.readHumidity();
+    // Read temperature as Celsius (the default)
+    t = dht.readTemperature();
+    // Read temperature as Fahrenheit (isFahrenheit = true)
+    f = dht.readTemperature(true); 
+  } while (isnan(h) || isnan(t) || isnan(f));
 
   // Check if any reads failed and exit early (to try again).
-  if (isnan(h) || isnan(t) || isnan(f)) {
-    Serial.println("Failed to read from DHT sensor!");
-    return;
-  }
+  //if (isnan(h) || isnan(t) || isnan(f)) {
+  //  Serial.println("Failed to read from DHT sensor!");
+  //  return;
+  //}
 
   // Compute heat index in Fahrenheit (the default)
   float hif = dht.computeHeatIndex(f, h);

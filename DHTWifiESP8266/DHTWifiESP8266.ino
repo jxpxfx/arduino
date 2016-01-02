@@ -11,13 +11,14 @@
 #define DHTPIN 2 //GPIO2
 #define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE);
-String writeAPIKey = "MY_THING";
+String writeAPIKey = "";
 
 float h;
 float t;
+float f;
 
-const char* ssid     = "ssid";
-const char* password = "pass";
+const char* ssid     = "";
+const char* password = "";
 
 const char* host = "api.thingspeak.com";
 
@@ -47,7 +48,7 @@ void setup() {
   connectWifi();
   updateDweet();
   Serial.println("goint to sleep. good night.");
-  ESP.deepSleep(300*1000000, WAKE_RF_DEFAULT); // Sleep for 10 minutes
+  ESP.deepSleep(1800*1000000, WAKE_RF_DEFAULT); // Sleep for 15 minutes
 }
 
 int value = 0;
@@ -106,7 +107,7 @@ void updateDweet(){
     return;
   }
 
-  readSensorData();
+  //readSensorData();
   
   // We now create a URI for the request
   sensorValue = analogRead(analogInPin);
@@ -159,19 +160,24 @@ void turnOff(int pin) {
 }
 
 void readSensorData() {
+  do {
+    Serial.println("Trying to read from DHT sensor!");
+    delay(2000);
     // Reading temperature or humidity takes about 250 milliseconds!
-  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  h = dht.readHumidity();
-  // Read temperature as Celsius (the default)
-  t = dht.readTemperature();
-  // Read temperature as Fahrenheit (isFahrenheit = true)
-  float f = dht.readTemperature(true);
+    // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+    h = dht.readHumidity();
+    // Read temperature as Celsius (the default)
+    t = dht.readTemperature();
+    // Read temperature as Fahrenheit (isFahrenheit = true)
+    f = dht.readTemperature(true); 
+  } while (isnan(h) || isnan(t) || isnan(f));
+  
 
   // Check if any reads failed and exit early (to try again).
-  if (isnan(h) || isnan(t) || isnan(f)) {
-    Serial.println("Failed to read from DHT sensor!");
-    return;
-  }
+  //if (isnan(h) || isnan(t) || isnan(f)) {
+  //  Serial.println("Failed to read from DHT sensor!");
+  //  return;
+  //}
 
   // Compute heat index in Fahrenheit (the default)
   float hif = dht.computeHeatIndex(f, h);
