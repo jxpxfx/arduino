@@ -1,3 +1,10 @@
+//configuration.h file
+//const char* ssid     = "ssid";
+//const char* password = "pass";
+//
+//const char* host = "api.thingspeak.com";
+//const char* channelId = "channel";
+
 ///ADXL345Esp8266Cloud//////////////////////////////////////////////////////
 // ESP8266-01 & ADXL345 acceleration sensor
 // in Arduino IDE
@@ -10,7 +17,7 @@
 //    and adapted to ESP8266
 /////////////////////////////////////////////////////////
 
-#include "config.h"
+#include "configuration.h"
 #include "math.h"
 #include <Wire.h>
 
