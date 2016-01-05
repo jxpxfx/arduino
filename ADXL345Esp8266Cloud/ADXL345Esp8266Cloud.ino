@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////
+///ADXL345Esp8266Cloud//////////////////////////////////////////////////////
 // ESP8266-01 & ADXL345 acceleration sensor
 // in Arduino IDE
 //
@@ -10,6 +10,7 @@
 //    and adapted to ESP8266
 /////////////////////////////////////////////////////////
 
+#include "config.h"
 #include "math.h"
 #include <Wire.h>
 
@@ -35,7 +36,8 @@ char DATAZ1 = 0x37;    //Z-Axis Data 1
 #define DHTPIN 2 //GPIO2
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
-String writeAPIKey = "";
+
+String writeAPIKey = channelId;
 
 float h;
 float t;
@@ -43,11 +45,6 @@ float f;
 
 int value = 0;
 float angleX = 0.0;
-
-const char* ssid     = "";
-const char* password = "";
-
-const char* host = "api.thingspeak.com";
 
 //sensor
 const int analogInPin = A0;
