@@ -56,7 +56,7 @@ void setup()
 void loop()
 {
   updateDweet();
-  delay(500);
+  delay(50);
 }
 
 void connectWifi(){
@@ -138,24 +138,24 @@ void updateDweet(){
   delay(10);
   
   // Read all the lines of the reply from server and print them to Serial
-  while(client.available()){
-    String line = client.readStringUntil('\r');
-    Serial.print(line);
-  }
+  //while(client.available()){
+  //  String line = client.readStringUntil('\r');
+  //  Serial.print(line);
+  //}
   
-  Serial.println();
-  blinkLed(GREEN);
+  Serial.println("Updated");
+  //blinkLed(GREEN);
   Serial.println("closing connection");
-  delay(2000);
+  //delay(2000);
 }
 
 void blinkLed(int color) {
   Serial.println("will blink now...");
   for (int i = 0; i < 2; i++) {
     digitalWrite(color, HIGH);
-    delay(100);
-    digitalWrite(color, LOW);
     delay(50);
+    digitalWrite(color, LOW);
+    delay(10);
   }
 }
 
@@ -167,7 +167,7 @@ void turnOff(int pin) {
 void readSensorData() {
   do {
     Serial.println("Trying to read from DHT sensor!");
-    delay(250);
+    delay(200);
     // Reading temperature or humidity takes about 250 milliseconds!
     // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
     h = dht.readHumidity();
