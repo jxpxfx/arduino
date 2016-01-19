@@ -10,8 +10,6 @@
 #include "math.h"
 #include <Wire.h>
 
-int isOpen = 0;
-
 //sonar config
 int pingPin = 5;
 int inPin = 4;
@@ -44,18 +42,21 @@ int sensorValue = 0;        // value read from the pot
 
 void setup()
 {
+  pinMode(pingPin, OUTPUT);
+  pinMode(inPin, INPUT);
   dht.begin();
-  Serial.println("start...");
   connectWifi();
-  updateDweet();
+  //Serial.println("start...");
+  //connectWifi();
+  //updateDweet();
   //Serial.println("goint to sleep. good night.");
-  ESP.deepSleep(300*1000000, WAKE_RF_DEFAULT); // Sleep for 1 minutes
+  //ESP.deepSleep(300*1000000, WAKE_RF_DEFAULT); // Sleep for 1 minutes
 }
 
 void loop()
 {
-  //readAccel();  // read the x/y/z tilt
-  //delay(200);   // only read every 200ms
+  updateDweet();
+  delay(500);
 }
 
 void connectWifi(){
@@ -107,17 +108,23 @@ void updateDweet(){
     return;
   }
 
+  //read sensor data
+  readSensorData();
+  
+  //read sonar distance
+  measureDistance();
+  
   // We now create a URI for the request
   sensorValue = analogRead(analogInPin);
   String tsData = "field1=";
-  tsData += isOpen;
+  tsData += s2;
   tsData += "&field2=";
   tsData += t;
   tsData += "&field3=";
   tsData += h;
   
-  Serial.print("connected. isOpen=");
-  Serial.println(isOpen);
+  Serial.print("connected. distance=");
+  Serial.println(s2);
   client.print("POST /update HTTP/1.1\n");
   client.print("Host: api.thingspeak.com\n");
   client.print("Connection: close\n");
@@ -160,7 +167,7 @@ void turnOff(int pin) {
 void readSensorData() {
   do {
     Serial.println("Trying to read from DHT sensor!");
-    delay(2000);
+    delay(250);
     // Reading temperature or humidity takes about 250 milliseconds!
     // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
     h = dht.readHumidity();
@@ -194,5 +201,63 @@ void readSensorData() {
   Serial.print(" *C ");
   Serial.print(hif);
   Serial.println(" *F");
+}
+
+void measureDistance()
+{
+  digitalWrite(pingPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(pingPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(pingPin, LOW);
+
+  duration = pulseIn(inPin, HIGH);
+
+  inches = microsecondsToInches(duration);
+  indec = (duration - inches * inchconv) * 10 / inchconv;
+  cm = microsecondsToCentimeters(duration);
+  cmdec = (duration - cm * cmconv) * 10 / cmconv;
+  s1 = String(inches) + "." + String(indec) + "in" + "     ";
+  s2 = String(cm) + "." + String(cmdec) + "cm" + "     ";
+  Serial.println(duration);
+  Serial.println(s1);
+  Serial.println(s2);
+
+  if (cm > 10)
+  {
+    Serial.println("---------------------------OPEN");
+    ledsOff();
+    digitalWrite(RED, HIGH);
+  }
+  else if (cm == 0)
+  {
+    Serial.println("---------------------------ERROR");
+    ledsOff();
+    blinkLed(BLUE);
+    blinkLed(BLUE);
+  }
+  else
+  {
+    Serial.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxCLOSED");
+    ledsOff();
+    digitalWrite(GREEN, HIGH);
+  }
+}
+
+long microsecondsToInches(long microseconds)
+{
+  return microseconds / inchconv;
+}
+
+long microsecondsToCentimeters(long microseconds)
+{
+  return microseconds / cmconv;
+}
+
+void ledsOff() 
+{
+  digitalWrite(RED, LOW);
+  digitalWrite(GREEN, LOW);
+  digitalWrite(BLUE, LOW);
 }
 
