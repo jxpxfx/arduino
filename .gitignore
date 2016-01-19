@@ -41,4 +41,6 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+ADXL345Esp8266Cloud/configuration.h
 ADXL345Esp8266Cloud/config.h
+ADXL345Esp8266Cloud/network.config

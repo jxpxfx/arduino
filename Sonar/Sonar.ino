@@ -2,6 +2,10 @@
 
 //LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
+const int RED = 15;  //RED
+const int GREEN = 12; //GREEN
+const int BLUE = 13; //BLUE
+
 int pingPin = 5;
 int inPin = 4;
 long duration, inches, cm;
@@ -11,6 +15,12 @@ int cmconv = 59;
 String s1, s2;
 
 void setup() {
+  pinMode (RED, OUTPUT);
+  pinMode (GREEN, OUTPUT);
+  pinMode (BLUE, OUTPUT);
+  
+  ledsOff();
+  
   Serial.begin(9600);
   //lcd.begin(16, 2);
   pinMode(pingPin, OUTPUT);
@@ -41,6 +51,17 @@ void loop()
   //Debug
   Serial.println(s2);
 
+  if (cm > 5)
+  {
+    ledsOff();
+    digitalWrite(RED, HIGH);
+  } 
+  else
+  {
+    ledsOff();
+    digitalWrite(GREEN, HIGH);
+  }
+
   delay(500);
 }
 
@@ -52,5 +73,12 @@ long microsecondsToInches(long microseconds)
 long microsecondsToCentimeters(long microseconds)
 {
   return microseconds / cmconv;
+}
+
+void ledsOff() 
+{
+  digitalWrite(RED, LOW);
+  digitalWrite(GREEN, LOW);
+  digitalWrite(BLUE, LOW);
 }
 
