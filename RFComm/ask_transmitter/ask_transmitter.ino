@@ -8,7 +8,7 @@
 #include <SPI.h> // Not actually used but needed to compile
 
 //RH_ASK driver(speed, rxPin, txPin, pttPin,pttInverse);
-RH_ASK driver(2000, 8, 5);
+RH_ASK driver(2000, 8, 4);
 
 void setup()
 {
@@ -19,10 +19,10 @@ void setup()
 
 void loop()
 {
-    const char *msg = "hello";
+    const char *msg = "hello123";
 
     driver.send((uint8_t *)msg, strlen(msg));
     driver.waitPacketSent();
     Serial.println("sent");
-    delay(200);
+    delay(2000);
 }

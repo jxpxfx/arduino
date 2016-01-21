@@ -8,7 +8,7 @@
 #include <SPI.h> // Not actualy used but needed to compile
 
 //RH_ASK driver(speed, rxPin, txPin, pttPin,pttInverse);
-RH_ASK driver(2000, 8, 7);
+RH_ASK driver(2000, 8, 4);
 
 void setup()
 {
@@ -31,6 +31,6 @@ void loop()
     }
     else
     {
-      Serial.println("nada");
+      //Serial.println("nada");
     }
 }
