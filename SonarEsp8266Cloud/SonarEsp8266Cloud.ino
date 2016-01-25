@@ -42,13 +42,14 @@ float f;
 const int analogInPin = A0;
 int sensorValue = 0;        // value read from the pot
 
-int counter = 0;
-int prevDistanceCm = 999;
-
 bool prevIsOpen = -1;
 bool isOpen = 0;
 
-long prevMillis = -99999999;
+long prevMillisMaker = -99999999;
+long prevMillisUpdateDweet = -99999999;
+
+long updateMakerInterval = 30*60000;
+long updateDweetInterval = 5000;
 
 void setup()
 {
@@ -62,42 +63,43 @@ void loop()
 {
   delay(500);
   long currMillis = millis();
+  long elapsedMillisMaker = currMillis - prevMillisMaker;
+  long elapsedMillisDweet = currMillis - prevMillisUpdateDweet;
   //Serial.println("loop");
   //read sonar distance
   measureDistance();
 
-  //request DHT sensor data when cycle starts
-  if (currMillis - prevMillis > 15*60000)
+  //tweet update logic every 5s
+  if (elapsedMillisDweet > updateDweetInterval)
   {
-    //read sensor data
-    readSensorData();
-    prevMillis = currMillis;
-  }
+    //update dweet
+    updateDweet();
 
+    elapsedMillisDweet = currMillis;
+  }  
+
+  //maker channel update logic whenever status change
+  //todo: avoid false status changes
   if (isOpen != prevIsOpen)
   {
     //update maker channel (status change notification) 
-    updateMakerChannel();
-    
-    //update thingspeak
-    updateThingspeak();
- 
+    updateMakerChannel();     
+
     prevIsOpen = isOpen;    
   }
-  else
-  {
-    if (counter == 10)
-    {
-      //update thingspeak
-      updateThingspeak();
-    }
-  }
 
-  //reset counter after iterations
-  if (counter++ > 60)
+  //request DHT sensor data when cycle starts and after 30min
+  //update thingspeak when a new reading is made
+  if (elapsedMillisMaker > updateMakerInterval)
   {
-    counter = 0;         
+    //read sensor data
+    readSensorData();
+    prevMillisMaker = currMillis;
+
+    //update thingspeak
+    updateThingspeak();
   }  
+
   //Serial.println("end of loop");
 }
 
@@ -228,6 +230,53 @@ void updateMakerChannel(){
   //}
   
   Serial.println("maker channel updated");
+  //blinkLed(GREEN);
+  //Serial.println("closing connection");
+  //delay(2000);
+  
+}
+
+void updateDweet(){
+  Serial.print("connecting to ");
+  Serial.println(dweetHost);
+  
+  // Use WiFiClient class to create TCP connections
+  WiFiClient client;
+  const int httpPort = 80;
+  if (!client.connect(dweetHost, httpPort)) {
+    Serial.println("connection failed");
+    blinkLed(RED);
+    return;
+  }
+  
+  // We now create a URI for the request
+  String url = "/dweet/for/";
+  url+= keyMakerChannel;
+  url += "?door=";
+  url += cm;
+  url += "&temperature=";
+  url += t;
+  url += "&humidity=";
+  url += h;
+  url += "&millis=";
+  url += millis();
+  
+  Serial.print("Requesting URL: ");
+  Serial.println(url);
+  
+  // This will send the request to the server
+  client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+               "Host: " + dweetHost + "\r\n" + 
+               "Connection: close\r\n\r\n");
+  delay(50);
+  
+  // Read all the lines of the reply from server and print them to Serial
+  //while(client.available()){
+  //  String line = client.readStringUntil('\r');
+  //  Serial.print(line);
+  //}
+  
+  Serial.println("dweet updated");
   //blinkLed(GREEN);
   //Serial.println("closing connection");
   //delay(2000);
