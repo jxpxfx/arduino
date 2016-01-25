@@ -19,7 +19,7 @@ int inchconv = 147;
 int cmconv = 59;
 String s1, s2;
 
-int threshold = 15;
+int threshold = 20;
 
 const int RED = 15;  //RED
 const int GREEN = 12; //GREEN
