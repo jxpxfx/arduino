@@ -19,6 +19,8 @@ int inchconv = 147;
 int cmconv = 59;
 String s1, s2;
 
+int threshold = 15;
+
 const int RED = 15;  //RED
 const int GREEN = 12; //GREEN
 const int BLUE = 13; //BLUE
@@ -46,6 +48,7 @@ int prevDistanceCm = 999;
 bool prevIsOpen = -1;
 bool isOpen = 0;
 
+long prevMillis = -99999999;
 
 void setup()
 {
@@ -57,27 +60,33 @@ void setup()
 
 void loop()
 {
+  delay(500);
+  long currMillis = millis();
+  //Serial.println("loop");
   //read sonar distance
   measureDistance();
 
   //request DHT sensor data when cycle starts
-  if (counter == 0)
+  if (currMillis - prevMillis > 15*60000)
   {
     //read sensor data
     readSensorData();
+    prevMillis = currMillis;
   }
 
   if (isOpen != prevIsOpen)
   {
+    //update maker channel (status change notification) 
+    updateMakerChannel();
+    
     //update thingspeak
     updateThingspeak();
-    //update maker channel (status change notification) 
-    updateMakerChannel(); 
+ 
     prevIsOpen = isOpen;    
   }
   else
   {
-    if (counter == 60)
+    if (counter == 10)
     {
       //update thingspeak
       updateThingspeak();
@@ -89,8 +98,7 @@ void loop()
   {
     counter = 0;         
   }  
-
-  //delay(50);
+  //Serial.println("end of loop");
 }
 
 void connectWifi(){
@@ -128,10 +136,10 @@ void connectWifi(){
 }
 
 void updateThingspeak(){
-  Serial.print("updateDweet method");
+  //Serial.print("updateThingspeak method");
 
-  Serial.print("connecting to ");
-  Serial.println(host);
+  //Serial.print("connecting to ");
+  //Serial.println(host);
   
   // Use WiFiClient class to create TCP connections
   WiFiClient client;
@@ -152,7 +160,7 @@ void updateThingspeak(){
   tsData += "&field3=";
   tsData += h;
   
-  Serial.print("connected. distance=");
+  Serial.print("connected TS. distance=");
   Serial.println(s2);
   client.print("POST /update HTTP/1.1\n");
   client.print("Host: api.thingspeak.com\n");
@@ -164,17 +172,11 @@ void updateThingspeak(){
   client.print("\n\n");
 
   client.print(tsData);
-  delay(10);
+  delay(50);
   
-  // Read all the lines of the reply from server and print them to Serial
-  //while(client.available()){
-  //  String line = client.readStringUntil('\r');
-  //  Serial.print(line);
-  //}
-  
-  Serial.println("Updated");
+  Serial.println("thingspeak updated");
   //blinkLed(GREEN);
-  Serial.println("closing connection");
+  //Serial.println("closing connection");
   //delay(2000);
 }
 
@@ -204,18 +206,20 @@ void updateMakerChannel(){
   //String url = "/trigger/teste/with/key/";
   url+= keyMakerChannel;
   url += "?value1=";
-  url += 123;
+  url += cm;
   url += "&value2=";
-  url += 456;
+  url += t;
+  url += "&value3=";
+  url += millis();
   
   Serial.print("Requesting URL: ");
   Serial.println(url);
   
   // This will send the request to the server
   client.print(String("GET ") + url + " HTTP/1.1\r\n" +
-               "Host: " + host + "\r\n" + 
+               "Host: " + hostMakerChannel + "\r\n" + 
                "Connection: close\r\n\r\n");
-  delay(10);
+  delay(50);
   
   // Read all the lines of the reply from server and print them to Serial
   //while(client.available()){
@@ -223,9 +227,9 @@ void updateMakerChannel(){
   //  Serial.print(line);
   //}
   
-  Serial.println("Updated");
+  Serial.println("maker channel updated");
   //blinkLed(GREEN);
-  Serial.println("closing connection");
+  //Serial.println("closing connection");
   //delay(2000);
   
 }
@@ -248,8 +252,8 @@ void turnOff(int pin) {
 void readSensorData() {
   int tries = 0;
   do {
-    Serial.println("Trying to read from DHT sensor!");
-    delay(200);
+    Serial.println("xDHTx");
+    delay(250);
     // Reading temperature or humidity takes about 250 milliseconds!
     // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
     h = dht.readHumidity();
@@ -257,7 +261,7 @@ void readSensorData() {
     t = dht.readTemperature();
     // Read temperature as Fahrenheit (isFahrenheit = true)
     f = dht.readTemperature(true); 
-  } while (isnan(h) || isnan(t) || isnan(f) && tries++ < 6);
+  } while (isnan(h) || isnan(t) || isnan(f) && tries++ < 8);
   
   // Compute heat index in Fahrenheit (the default)
   //float hif = dht.computeHeatIndex(f, h);
@@ -269,7 +273,7 @@ void readSensorData() {
   //Serial.print(" %\t");
   Serial.print("Temperature: ");
   Serial.print(t);
-  Serial.print(" *C ");
+  Serial.println(" *C ");
   //Serial.print(f);
   //Serial.print(" *F\t");
   //Serial.print("Heat index: ");
@@ -297,19 +301,19 @@ void measureDistance()
   s2 = String(cm) + "." + String(cmdec) + "cm" + "     ";
   //Serial.println(duration);
   //Serial.println(s1);
-  //Serial.println(s2);
+  Serial.println(s2);
 
-  if (cm > 10)
+  if (cm > threshold)
   {
     isOpen = 1;
-    Serial.println("---------------------------OPEN");
+    //Serial.println("---------------------------OPEN");
     ledsOff();
     digitalWrite(RED, HIGH);
   }
   else if (cm == 0)
   {
     isOpen = 1;
-    Serial.println("---------------------------ERROR");
+    //Serial.println("---------------------------ERROR");
     ledsOff();
     blinkLed(BLUE);
     blinkLed(BLUE);
@@ -317,7 +321,7 @@ void measureDistance()
   else
   {
     isOpen = 0;
-    Serial.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxCLOSED");
+    //Serial.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxCLOSED");
     ledsOff();
     digitalWrite(GREEN, HIGH);
   }

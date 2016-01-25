@@ -51,7 +51,7 @@ void loop()
   //Debug
   Serial.println(s2);
 
-  if (cm > 5)
+  if (cm > 20)
   {
     ledsOff();
     digitalWrite(RED, HIGH);
