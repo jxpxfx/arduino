@@ -34,8 +34,11 @@ int sensorValue = 0;        // value read from the pot
 bool prevIsOpen = -1;
 bool isOpen = 0;
 
-long prevMillisMaker = -99999999;
-long prevMillisUpdateDweet = -99999999;
+//long prevMillisMaker = -99999999;
+//long prevMillisUpdateDweet = -99999999;
+
+long prevMillisMaker = 0;
+long prevMillisUpdateDweet = 0;
 
 long updateMakerInterval = 30*60000;
 long updateDweetInterval = 5000;
@@ -52,11 +55,13 @@ void setup()
 
 void loop()
 {
-  delay(250);
+  delay(100);
   ledsOff();
+  //if ((unsigned long)(millis() - previousMillis) >= interval)
   long currMillis = millis();
-  long elapsedMillisMaker = currMillis - prevMillisMaker;
-  long elapsedMillisDweet = currMillis - prevMillisUpdateDweet;
+  long elapsedMillisMaker = (unsigned long)(currMillis - prevMillisMaker); //currMillis - prevMillisMaker;
+  long elapsedMillisDweet = (unsigned long)(currMillis - prevMillisUpdateDweet);//currMillis - prevMillisUpdateDweet;
+  
   //Serial.println("elapsed:");
   //Serial.println(elapsedMillisDweet);
   //Serial.println("loop");
@@ -77,6 +82,7 @@ void loop()
   //tweet update logic every 5s
   if (elapsedMillisDweet > updateDweetInterval)
   {
+    Serial.println("updateDweet 5s");
     //update dweet
     updateDweet();
 
@@ -84,19 +90,24 @@ void loop()
   }  
 
   //maker channel update logic whenever status change
-  //todo: avoid false status changes
   if (isOpen != prevIsOpen)
   {
+    Serial.println("status change");
+    
     //update maker channel (status change notification) 
     updateMakerChannel();     
+
+    //update dweet
+    updateDweet();
 
     prevIsOpen = isOpen;    
   }
 
   //request DHT sensor data when cycle starts and after 30min
   //update thingspeak when a new reading is made
-  if (elapsedMillisMaker > updateMakerInterval)
+  if ((elapsedMillisMaker > updateMakerInterval)  || (prevMillisMaker == 0))
   {
+    Serial.println("readerSensor");
     //read sensor data
     readSensorData();
     prevMillisMaker = currMillis;
@@ -104,8 +115,6 @@ void loop()
     //update thingspeak
     updateThingspeak();
   }  
-
-  //Serial.println("end of loop");
 }
 
 void connectWifi(){
@@ -229,10 +238,10 @@ void updateMakerChannel(){
   delay(50);
   
   // Read all the lines of the reply from server and print them to Serial
-  while(client.available()){
-    String line = client.readStringUntil('\r');
-    Serial.print(line);
-  }
+  //while(client.available()){
+  //  String line = client.readStringUntil('\r');
+  //  Serial.print(line);
+  //}
   
   Serial.println("maker channel updated");
   //blinkLed(GREEN);
