@@ -1,4 +1,4 @@
-const int pinSwitch = 12; //Pin Reed
+const int pinSwitch = 5; //Pin Reed
 
 const int pinLed = 13; //Pin LED
 
