@@ -17,8 +17,7 @@ const int BLUE = 13; //BLUE
 #include <ESP8266WiFi.h>
 #include "DHT.h"
 
-//#define DHTPIN 2 //GPIO2
-#define DHTPIN 14 //GPIO14
+#define DHTPIN 2 //GPIO2
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -34,8 +33,6 @@ int sensorValue = 0;        // value read from the pot
 
 bool prevIsOpen = -1;
 bool isOpen = 0;
-
-bool is1stTime = true;
 
 //long prevMillisMaker = -99999999;
 //long prevMillisUpdateDweet = -99999999;
@@ -54,9 +51,7 @@ void setup()
   pinMode(pinSwitch, INPUT);
   dht.begin();
   connectWifi();
-  readSensorData();
-  /// log reset
-  //updateMakerChannel(true);
+  updateDweet(false);
 }
 
 void loop()
@@ -90,7 +85,7 @@ void loop()
   {
     //Serial.println("updateDweet 5s");
     //update dweet
-    updateDweet();
+    updateDweet(true);
 
     prevMillisUpdateDweet = currMillis;
   }  
@@ -101,17 +96,10 @@ void loop()
     //Serial.println("status change");
     
     //update maker channel (status change notification) 
-    if (is1stTime)
-    {
-      is1stTime = false;
-    }
-    else
-    {
-      updateMakerChannel(false);     
-    }
+    //updateMakerChannel();     
 
     //update dweet
-    updateDweet();
+    updateDweet(true);
 
     prevIsOpen = isOpen;    
   }
@@ -122,7 +110,7 @@ void loop()
   {
     //Serial.println("readerSensor");
     //read sensor data
-    readSensorData();
+    //readSensorData();
     prevMillisMaker = currMillis;
 
     //update thingspeak
@@ -142,7 +130,7 @@ void connectWifi(){
   delay(10);
 
   // We start by connecting to a WiFi network
-  digitalWrite(BLUE, HIGH);
+  digitalWrite(RED, HIGH);
   Serial.println();
   Serial.println();
   Serial.print("Connecting to ");
@@ -159,8 +147,9 @@ void connectWifi(){
   Serial.println("WiFi connected");  
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
-  digitalWrite(BLUE, LOW);
+  digitalWrite(RED, LOW);
   blinkLed(BLUE);
+
 }
 
 void updateThingspeak(){
@@ -208,7 +197,7 @@ void updateThingspeak(){
   //delay(2000);
 }
 
-void updateMakerChannel(bool isFirstTime){
+void updateMakerChannel(){
   //Serial.print("connecting to ");
   //Serial.println(hostMakerChannel);
   
@@ -234,21 +223,14 @@ void updateMakerChannel(bool isFirstTime){
   //String url = "/trigger/teste/with/key/";
   url+= keyMakerChannel;
   url += "?value1=";
-  if (isFirstTime)
-  {
-    url += "-999";
-  }
-  else
-  {
-    url += isOpen;
-  }  
+  url += isOpen;
   url += "&value2=";
   url += t;
   url += "&value3=";
   url += millis();
   
-  Serial.print("Requesting URL: ");
-  Serial.println(url);
+  //Serial.print("Requesting URL: ");
+  //Serial.println(url);
   
   // This will send the request to the server
   client.print(String("GET ") + url + " HTTP/1.1\r\n" +
@@ -269,7 +251,7 @@ void updateMakerChannel(bool isFirstTime){
   
 }
 
-void updateDweet(){
+void updateDweet(bool isBogus){
   //Serial.print("connecting to ");
   //Serial.println(dweetHost);
   
@@ -284,18 +266,20 @@ void updateDweet(){
   
   // We now create a URI for the request
   String url = "/dweet/for/";
-  url+= dweetThing;
-  url += "?isOpen=";
-  url += isOpen;
-  url += "&temperature=";
-  url += t;
-  url += "&humidity=";
-  url += h;
-  url += "&millis=";
+  if (!isBogus)
+  {
+    url+= dweetThing;
+  }
+  else
+  {
+    url+= dweetThingBogus;
+  }
+  
+  url += "?millis=";
   url += millis();
   
-  //Serial.print("Requesting URL: ");
-  //Serial.println(url);
+  Serial.print("Requesting URL: ");
+  Serial.println(url);
   
   // This will send the request to the server
   client.print(String("GET ") + url + " HTTP/1.1\r\n" +
