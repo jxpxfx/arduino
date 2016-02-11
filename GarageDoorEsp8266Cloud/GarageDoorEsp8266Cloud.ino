@@ -187,6 +187,8 @@ void updateThingspeak(){
   tsData += t;
   tsData += "&field3=";
   tsData += h;
+  tsData += "&field4=";
+  tsData += millis();
   
   //Serial.print("connected TS. isOpen=");
   //Serial.println(isOpen);
