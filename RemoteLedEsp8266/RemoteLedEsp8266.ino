@@ -7,6 +7,8 @@ const int RED = 15;  //RED
 const int GREEN = 12; //GREEN
 const int BLUE = 13; //BLUE
 
+int pushButton = 5;
+
 #include <ESP8266WiFi.h>
 
 String writeAPIKey = channelId;
@@ -23,14 +25,20 @@ long prevMillisUpdateDweet = 0;
 long updateMakerInterval = 30*60000;
 long updateDweetInterval = 5000;
 
+bool isAlertsOn = true;
+
 void setup()
 {
+  pinMode(pushButton, INPUT);
+  
   connectWifi();
   ledsOff();
 }
 
 void loop()
 {
+  buttonAlerts();
+  
   delay(100);
   //ledsOff();
   //if ((unsigned long)(millis() - previousMillis) >= interval)
@@ -48,19 +56,36 @@ void loop()
   }  
 }
 
+void buttonAlerts()
+{
+    //read button state (toggle)
+    // read the input pin:
+  int buttonState = digitalRead(pushButton);
+  // print out the state of the button:
+  Serial.println("button state=");
+  Serial.println(buttonState);
+  if (buttonState == 1)
+  {
+    isAlertsOn = !isAlertsOn;
+    Serial.println("flipped isAlertsOn=");
+    Serial.println(isAlertsOn);
+  }
+
+  Serial.println("isAlertsOn=");
+  Serial.println(isAlertsOn);
+}
+
 void connectWifi(){
   pinMode(RED, OUTPUT);
   pinMode(GREEN, OUTPUT);
   pinMode(BLUE, OUTPUT);
-  digitalWrite(RED, LOW);
-  digitalWrite(GREEN, LOW);
-  digitalWrite(BLUE, LOW);
+  ledsOff();
   
   Serial.begin(9600);
   delay(10);
 
   // We start by connecting to a WiFi network
-  digitalWrite(BLUE, HIGH);
+  //digitalWrite(BLUE, HIGH);
   Serial.println();
   Serial.println();
   Serial.print("Connecting to ");
@@ -77,7 +102,7 @@ void connectWifi(){
   Serial.println("WiFi connected");  
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
-  digitalWrite(BLUE, LOW);
+  //digitalWrite(BLUE, LOW);
   blinkLed(BLUE);
 }
 
@@ -171,8 +196,15 @@ void processResponse(String response) {
   long milLong = mil.toInt();
   Serial.println(milLong);
 
-  if (milLong % 2 == 0) {
-    turnOn(GREEN);
+  if (isAlertsOn)
+  {
+    if (milLong % 2 == 0) {
+      turnOn(GREEN);
+    }
+    else
+    {
+      turnOn(RED);
+    }
   }
   else
   {
