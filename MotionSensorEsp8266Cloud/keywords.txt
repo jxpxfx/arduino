@@ -1,0 +1,4 @@
+ZCloud   KEYWORD1
+connectWifi    KEYWORD2
+updateDweet    KEYWORD2
+retrieveDweet     KEYWORD2

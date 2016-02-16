@@ -5,10 +5,12 @@
 //const char* host = "api.thingspeak.com";
 //const char* channelId = "channel";
 
-
-#include "configuration.h"
+//#include "configuration.h"
 #include "math.h"
 #include <Wire.h>
+
+#include "ZCloud.h"
+ZCloud zcloud(13);
 
 //PIR
 //VARS
@@ -43,7 +45,7 @@ const int BLUE = 13; //BLUE
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
-String writeAPIKey = channelId;
+//String writeAPIKey = channelId;
 
 float h;
 float t;
@@ -53,13 +55,8 @@ float f;
 const int analogInPin = A0;
 int sensorValue = 0;        // value read from the pot
 
-//bool prevIsOpen = -1;
-//bool isOpen = 0;
-
 bool is1stTime = true;
 
-//long prevMillisMaker = -99999999;
-//long prevMillisUpdateDweet = -99999999;
 
 long prevMillisMaker = 0;
 long prevMillisUpdateDweet = 0;
@@ -74,7 +71,7 @@ void setup()
 {
   pinMode(pinSwitch, INPUT);
   //dht.begin();
-  connectWifi();
+  zcloud.connectWifi();
   //readSensorData();
   setupPir();
 }
@@ -82,7 +79,7 @@ void setup()
 void loop()
 {
   delay(100);
-  ledsOff();
+  zcloud.ledsOff();
   //if ((unsigned long)(millis() - previousMillis) >= interval)
   long currMillis = millis();
   long elapsedMillisMaker = (unsigned long)(currMillis - prevMillisMaker); //currMillis - prevMillisMaker;
@@ -98,8 +95,6 @@ void loop()
   //tweet update logic every 5s
   if (elapsedMillisDweet > updateDweetInterval)
   {
-    //Serial.println("updateDweet 5s");
-    //update dweet
     updateDweet();
 
     prevMillisUpdateDweet = currMillis;
@@ -117,11 +112,12 @@ void loop()
     }
     else
     {
-      updateMakerChannel(false);     
+      zcloud.updateMakerChannel(false, isMotionDetected ? "motion_started" : "motion_ended", t);     
     }
 
-    //update dweet
     updateDweet();
+
+    updateThingspeak();
 
     isMotionDetectedPrevious = isMotionDetected;    
   }
@@ -135,9 +131,41 @@ void loop()
     //readSensorData();
     prevMillisMaker = currMillis;
 
-    //update thingspeak
-    updateThingspeak();
+    //updateThingspeak();
   }  
+}
+
+void updateDweet()
+{
+      //update dweet
+    String tsData = "isMotionDetected=";
+    tsData += isMotionDetected;
+    tsData += "&temperature=";
+    tsData += t;
+    tsData += "&humidity=";
+    tsData += h;
+    tsData += "&millis=";
+    tsData += millis();
+    zcloud.updateDweet(tsData);
+}
+
+void updateThingspeak()
+{
+      //update thingspeak
+    String tsData = "field1=";
+    tsData += isMotionDetected;
+    tsData += "&field2=";
+    tsData += t;
+    tsData += "&field3=";
+    tsData += h;
+    tsData += "&field4=";
+    tsData += millis();
+    zcloud.updateThingspeak(tsData);
+}
+
+void updateMakerChannel()
+{
+  
 }
 
 void checkPir()
@@ -179,209 +207,6 @@ if(digitalRead(pirPin) == HIGH){
    }
 }
 
-void connectWifi(){
-  pinMode(RED, OUTPUT);
-  pinMode(GREEN, OUTPUT);
-  pinMode(BLUE, OUTPUT);
-  digitalWrite(RED, LOW);
-  digitalWrite(GREEN, LOW);
-  digitalWrite(BLUE, LOW);
-  
-  Serial.begin(9600);
-  delay(10);
-
-  // We start by connecting to a WiFi network
-  digitalWrite(BLUE, HIGH);
-  Serial.println();
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-  
-  WiFi.begin(ssid, password);
-  
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("");
-  Serial.println("WiFi connected");  
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-  digitalWrite(BLUE, LOW);
-  blinkLed(BLUE);
-}
-
-void updateThingspeak(){
-  //Serial.print("updateThingspeak method");
-
-  //Serial.print("connecting to ");
-  //Serial.println(host);
-  
-  // Use WiFiClient class to create TCP connections
-  WiFiClient client;
-  const int httpPort = 80;
-  while (!client.connect(host, httpPort)) {
-    Serial.println("connection failed");
-    blinkLed(RED);
-    //return;
-    connectWifi();
-  }
-  
-  // We now create a URI for the request
-  sensorValue = analogRead(analogInPin);
-  String tsData = "field1=";
-  tsData += isMotionDetected;
-  tsData += "&field2=";
-  tsData += t;
-  tsData += "&field3=";
-  tsData += h;
-  tsData += "&field4=";
-  tsData += millis();
-  
-  //Serial.print("connected TS. isOpen=");
-  //Serial.println(isOpen);
-  client.print("POST /update HTTP/1.1\n");
-  client.print("Host: api.thingspeak.com\n");
-  client.print("Connection: close\n");
-  client.print("X-THINGSPEAKAPIKEY: "+writeAPIKey+"\n");
-  client.print("Content-Type: application/x-www-form-urlencoded\n");
-  client.print("Content-Length: ");
-  client.print(tsData.length());
-  client.print("\n\n");
-
-  client.print(tsData);
-  delay(50);
-  
-  //Serial.println("thingspeak updated");
-  //blinkLed(GREEN);
-  //Serial.println("closing connection");
-  //delay(2000);
-}
-
-void updateMakerChannel(bool isFirstTime){
-  //Serial.print("connecting to ");
-  //Serial.println(hostMakerChannel);
-  
-  // Use WiFiClient class to create TCP connections
-  WiFiClient client;
-  const int httpPort = 80;
-  if (!client.connect(hostMakerChannel, httpPort)) {
-    Serial.println("connection failed");
-    blinkLed(RED);
-    return;
-  }
-  
-  // We now create a URI for the request
-  String url;
-  if (isMotionDetected)
-  {
-    url = "/trigger/motion_started/with/key/";
-  }
-  else
-  {
-    url = "/trigger/motion_ended/with/key/";
-  }
-  //String url = "/trigger/teste/with/key/";
-  url+= keyMakerChannel;
-  url += "?value1=";
-  if (isFirstTime)
-  {
-    url += "-999";
-  }
-  else
-  {
-    url += isMotionDetected;
-  }  
-  url += "&value2=";
-  url += t;
-  url += "&value3=";
-  url += millis();
-  
-  Serial.print("Requesting URL: ");
-  Serial.println(url);
-  
-  // This will send the request to the server
-  client.print(String("GET ") + url + " HTTP/1.1\r\n" +
-               "Host: " + hostMakerChannel + "\r\n" + 
-               "Connection: close\r\n\r\n");
-  delay(50);
-  
-  // Read all the lines of the reply from server and print them to Serial
-  //while(client.available()){
-  //  String line = client.readStringUntil('\r');
-  //  Serial.print(line);
-  //}
-  
-  //Serial.println("maker channel updated");
-  //blinkLed(GREEN);
-  //Serial.println("closing connection");
-  //delay(2000);
-  
-}
-
-void updateDweet(){
-  //Serial.print("connecting to ");
-  //Serial.println(dweetHost);
-  
-  // Use WiFiClient class to create TCP connections
-  WiFiClient client;
-  const int httpPort = 80;
-  if (!client.connect(dweetHost, httpPort)) {
-    Serial.println("connection failed");
-    blinkLed(RED);
-    return;
-  }
-  
-  // We now create a URI for the request
-  String url = "/dweet/for/";
-  url+= dweetThing;
-  url += "?isMotionDetected=";
-  url += isMotionDetected;
-  url += "&temperature=";
-  url += t;
-  url += "&humidity=";
-  url += h;
-  url += "&millis=";
-  url += millis();
-  
-  //Serial.print("Requesting URL: ");
-  //Serial.println(url);
-  
-  // This will send the request to the server
-  client.print(String("GET ") + url + " HTTP/1.1\r\n" +
-               "Host: " + dweetHost + "\r\n" + 
-               "Connection: close\r\n\r\n");
-  delay(50);
-  
-  // Read all the lines of the reply from server and print them to Serial
-  //while(client.available()){
-  //  String line = client.readStringUntil('\r');
-  //  Serial.print(line);
-  //}
-  
-  //Serial.println("dweet updated");
-  //blinkLed(GREEN);
-  //Serial.println("closing connection");
-  //delay(2000);
-  
-}
-
-void blinkLed(int color) {
-  //Serial.println("will blink now...");
-  for (int i = 0; i < 2; i++) {
-    digitalWrite(color, HIGH);
-    delay(50);
-    digitalWrite(color, LOW);
-    delay(10);
-  }
-}
-
-void turnOff(int pin) {
-  pinMode(pin, OUTPUT);
-  digitalWrite(pin, 1);
-}
-
 void readSensorData() {
   int tries = 0;
   do {
@@ -405,18 +230,10 @@ void setupPir()
   //give the sensor some time to calibrate
   Serial.print("calibrating sensor ");
   for(int i = 0; i < calibrationTime; i++){
-    Serial.print(".");
+    Serial.print("_ ");
     delay(1000);
   }
   Serial.println(" done");
   Serial.println("SENSOR ACTIVE");
   delay(50);  
 }
-
-void ledsOff() 
-{
-  digitalWrite(RED, LOW);
-  digitalWrite(GREEN, LOW);
-  digitalWrite(BLUE, LOW);
-}
-
