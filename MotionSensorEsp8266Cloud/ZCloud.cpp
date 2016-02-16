@@ -1,9 +1,11 @@
+#include <ArduinoJson.h>
 #include "Arduino.h"
 #include "ZCloud.h"
 #include <ESP8266WiFi.h>
 #include "configuration.h"
 
-#define DEBUG true
+
+#define DEBUG false
 
 const int RED = 15;  //RED
 const int GREEN = 12; //GREEN
@@ -203,6 +205,113 @@ void ZCloud::updateThingspeak(String tsData)
 
 void ZCloud::retrieveDweet()
 {
+  //Serial.print("connecting to ");
+  //Serial.println(dweetHost);
+
+  //blinkLed(GREEN);
+  // Use WiFiClient class to create TCP connections
+  WiFiClient client;
+  const int httpPort = 80;
+  while (!client.connect(dweetHost, httpPort)) {
+    Serial.println("connection failed");
+    blinkLed(RED);
+    return;
+  }
+  
+  // We now create a URI for the request
+  String url = "/get/latest/dweet/for/";
+  url+= dweetThingRead;
+  
+  //Serial.print("Requesting URL: ");
+  //Serial.println(url);
+  
+  // This will send the request to the server
+  client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+               "Host: " + dweetHost + "\r\n" + 
+               "Connection: close\r\n\r\n");
+  delay(50);
+
+  //blinkLed(BLUE);
+  // Read all the lines of the reply from server and print them to Serial
+  String response;
+  while(client.available()){
+    String line = client.readStringUntil('\r');
+    //Serial.print(line);
+    response += line;
+  }  
+   
+  processResponse(response);
+  //blinkLed(GREEN);
+  //Serial.println("closing connection");
+  //processResponse(client);
+//  delay(5000);
+  
+}
+
+void ZCloud::processResponse(String response) 
+{
+  int openBracket = response.indexOf('{');
+  int closeBracket = response.lastIndexOf('}');
+  String responseJson = response.substring(openBracket, closeBracket+1);
+
+  #if DEBUG
+//  Serial.println("responseJson:");
+  Serial.println(responseJson);
+//  Serial.println("got dweet");  
+  #endif
+  
+  DynamicJsonBuffer  jsonBuffer;
+
+    // Root of the object tree.
+  //
+  // It's a reference to the JsonObject, the actual bytes are inside the
+  // JsonBuffer with all the other nodes of the object tree.
+  // Memory is freed when jsonBuffer goes out of scope.
+  JsonObject& root = jsonBuffer.parseObject(responseJson);
+
+  // Test if parsing succeeds.
+  if (!root.success()) {
+    Serial.println("parseObject() failed");
+    return;
+  }
+
+  // Fetch values.
+  // Most of the time, you can rely on the implicit casts.
+  // In other case, you can do root["time"].as<long>();
+  const char* sensor = root["this"];
+  String thing = root["with"][0]["thing"].asString();
+  String temperature = root["with"][0]["content"]["temperature"].asString();
+
+  #if DEBUG
+  Serial.println("Values:");
+  Serial.println(thing);
+  Serial.println(temperature);
+  
+  String isOpen = root["with"][0]["content"]["isOpen"].asString();
+  bool isOpenB = isOpen.toInt();
+  Serial.println(isOpenB);
+  
+  String mil = root["with"][0]["content"]["millis"].asString();
+  long milLong = mil.toInt();
+  Serial.print("millis from web=");
+  Serial.println(milLong);
+
+  
+  if (isAlertsOn)
+  {
+    if (milLong % 2 == 0) {
+      turnOn(GREEN);
+    }
+    else
+    {
+      turnOn(RED);
+    }
+  }
+  else
+  {
+    //turnOn(BLUE);
+  }
+  #endif
 }
 
 //LEDS UTIL
@@ -221,6 +330,11 @@ void ZCloud::blinkLed(int color) {
     digitalWrite(color, LOW);
     delay(10);
   }
+}
+
+void ZCloud::turnOn(int pin) {
+  ledsOff();
+  digitalWrite(pin, HIGH);
 }
 
 void ZCloud::turnOff(int pin) {

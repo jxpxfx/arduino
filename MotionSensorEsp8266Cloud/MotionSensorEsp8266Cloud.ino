@@ -1,3 +1,4 @@
+#include <ArduinoJson.h>
 //configuration.h file
 //const char* ssid     = "ssid";
 //const char* password = "pass";
@@ -54,6 +55,7 @@ void setup()
 
 void loop()
 {
+  //zcloud.retrieveDweet();
   //read pir
   isMotionDetected = motionSensor.checkPir();
   delay(100);
@@ -107,7 +109,7 @@ void loop()
 
 void updateDweet()
 {
-      //update dweet
+    //update dweet
     String tsData = "isMotionDetected=";
     tsData += isMotionDetected;
     tsData += "&temperature=";
