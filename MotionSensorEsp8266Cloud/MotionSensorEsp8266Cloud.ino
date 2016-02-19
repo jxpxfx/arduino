@@ -6,12 +6,13 @@
 //const char* host = "api.thingspeak.com";
 //const char* channelId = "channel";
 
-//#include "configuration.h"
+#include "configuration.h"
 #include "math.h"
 #include <Wire.h>
 
 #include "ZCloud.h"
-ZCloud zcloud(13);
+
+ZCloud zcloud(ssid, password);
 
 #include "MotionSensor.h"
 MotionSensor motionSensor(4);
@@ -46,6 +47,11 @@ long updateDweetInterval = 5000;
 
 void setup()
 {
+  zcloud.setThingspeakChannelId(thingspeakChannelId);
+  zcloud.setKeyMakerChannel(keyMakerChannel);
+  zcloud.setDweetThing(dweetThing);
+  zcloud.setDweetThingRead(dweetThingRead);
+  
   zcloud.connectWifi();
   motionSensor.setupPir();    
   zcloud.ledsOff();

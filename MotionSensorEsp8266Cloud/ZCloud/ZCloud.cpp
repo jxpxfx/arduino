@@ -2,23 +2,35 @@
 #include "Arduino.h"
 #include "ZCloud.h"
 #include <ESP8266WiFi.h>
-#include "configuration.h"
+//#include "configuration.h"
 
 
 #define DEBUG false
+
+const char* host = "api.thingspeak.com";
+const char* hostMakerChannel = "maker.ifttt.com";
+const char* dweetHost = "www.dweet.io";
 
 const int RED = 15;  //RED
 const int GREEN = 12; //GREEN
 const int BLUE = 13; //BLUE
 
+//Todo: Use as Paramater
+const int networks = 3;
+
 const int maxConnectionRetries = 20;
 
-String writeAPIKey = channelId;
+//String writeAPIKey = channelId;
 
-ZCloud::ZCloud(int pin)
+ZCloud::ZCloud(char* ssid[3], char* password[3])
 {
-  pinMode(pin, OUTPUT);
-  _pin = pin;
+  //pinMode(pin, OUTPUT);
+  //_pin = pin;
+  for (int i = 0; i < networks; i++)
+  {
+    _ssid[i] = ssid[i];
+    _password[i] = password[i];
+  }
 }
 
 void ZCloud::connectWifi()
@@ -37,13 +49,14 @@ void ZCloud::connectWifi()
     // We start by connecting to a WiFi network
     digitalWrite(BLUE, HIGH);
     Serial.print("Connecting to ");
-    Serial.println(ssid[i]);
+    Serial.println(_ssid[i]);
     
-    WiFi.begin(ssid[i], password[i]);
+    WiFi.begin(_ssid[i], _password[i]);
     int tries = 0;
     while (WiFi.status() != WL_CONNECTED && tries <= maxConnectionRetries) {
       delay(500);
       Serial.print(".");
+      blinkLed(BLUE);
       tries++;
     }
 
@@ -53,14 +66,14 @@ void ZCloud::connectWifi()
       Serial.println("WiFi connected");  
       Serial.println("IP address: ");
       Serial.println(WiFi.localIP());
-      digitalWrite(BLUE, LOW);
-      blinkLed(BLUE); 
+//      digitalWrite(BLUE, LOW);
+      digitalWrite(BLUE, HIGH);
       break;
     }
     else
     {
       Serial.print("Cannot connect to:");
-      Serial.println(ssid[i]);
+      Serial.println(_ssid[i]);
     }
   }
 }
@@ -83,7 +96,7 @@ void ZCloud::updateDweet(String tsData)
   
   // We now create a URI for the request
   String url = "/dweet/for/";
-  url+= dweetThing;
+  url+= _dweetThing;
   url+= "?";
   url+=tsData;
 
@@ -131,7 +144,7 @@ void ZCloud::updateMakerChannel(bool isFirstTime, String event, float t)
   String url;
   url += "/trigger/" + event + "/with/key/";
   
-  url+= keyMakerChannel;
+  url+= _keyMakerChannel;
   url += "?value1=";
   if (isFirstTime)
   {
@@ -184,6 +197,8 @@ void ZCloud::updateThingspeak(String tsData)
     //return;
     connectWifi();
   }
+
+  String writeAPIKey = _thingspeakChannelId;
   
   client.print("POST /update HTTP/1.1\n");
   client.print("Host: api.thingspeak.com\n");
@@ -220,7 +235,7 @@ void ZCloud::retrieveDweet()
   
   // We now create a URI for the request
   String url = "/get/latest/dweet/for/";
-  url+= dweetThingRead;
+  url+= _dweetThingRead;
   
   //Serial.print("Requesting URL: ");
   //Serial.println(url);
@@ -340,5 +355,25 @@ void ZCloud::turnOn(int pin) {
 void ZCloud::turnOff(int pin) {
   pinMode(pin, OUTPUT);
   digitalWrite(pin, 1);
+}
+
+void ZCloud::setThingspeakChannelId(char* thingspeakChannelId)
+{
+  _thingspeakChannelId = thingspeakChannelId;
+}
+
+void ZCloud::setKeyMakerChannel(char* keyMakerChannel)
+{
+  _keyMakerChannel = keyMakerChannel;
+}
+
+void ZCloud::setDweetThing (char* dweetThing)
+{
+  _dweetThing = dweetThing;
+}
+
+void ZCloud::setDweetThingRead(char* dweetThingRead)
+{
+  _dweetThingRead = dweetThingRead;
 }
 
