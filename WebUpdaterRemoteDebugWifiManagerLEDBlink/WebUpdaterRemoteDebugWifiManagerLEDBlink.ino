@@ -1,5 +1,7 @@
 /*
   To upload through terminal you can use: curl -F "image=@firmware.bin" esp8266-webupdate.local/update
+  Thanks to https://github.com/tzapu/WiFiManager
+  Thanks to https://github.com/JoaoLopesF/RemoteDebug
 */
 
 #include <ESP8266WiFi.h>
@@ -18,6 +20,8 @@
 
 //web update OTA
 const char* host = "esp8266-webupdate";
+//const char* ssid = "";
+//const char* password = "";
 
 ESP8266WebServer httpServer(80);
 ESP8266HTTPUpdateServer httpUpdater;
@@ -28,6 +32,47 @@ int count = 0;
 
 void setup(void){
 
+  setupNetwork();
+
+  //YOUR SETUP CODE GOES HERE
+  
+  // initialize digital pin 13 as an output.
+  pinMode(13, OUTPUT);
+  pinMode(12, OUTPUT);
+  pinMode(15, OUTPUT);
+  
+  //YOUR SETUP CODE ENDS HERE
+}
+
+void loop(void){
+  //Web Server
+  httpServer.handleClient();
+
+  //YOUR LOOP CODE GOES HERE
+  
+  if (Debug.ative(Debug.DEBUG)) {
+    Debug.println(count++);
+  }
+  //Blink LED
+  digitalWrite(13, HIGH);   // turn the LED on (HIGH is the voltage level)
+  delay(500);              // wait for a second
+  digitalWrite(13, LOW);    // turn the LED off by making the voltage LOW
+  delay(500);              // wait for a second
+  digitalWrite(12, HIGH);   // turn the LED on (HIGH is the voltage level)
+  delay(500);              // wait for a second
+  digitalWrite(12, LOW);    // turn the LED off by making the voltage LOW
+  delay(500);    
+  digitalWrite(15, HIGH);   // turn the LED on (HIGH is the voltage level)
+  delay(500);              // wait for a second
+  digitalWrite(15, LOW);    // turn the LED off by making the voltage LOW
+  delay(500);    
+  //YOUR LOOP CODE ENDS HERE
+  
+  // Remote debug over telnet
+  Debug.handle();
+}
+
+void setupNetwork() {
   //Wifi Manager
   WiFiManager wifiManager;
   //first parameter is name of access point, second is the password
@@ -63,23 +108,5 @@ void setup(void){
   Debug.setResetCmdEnabled(true); // Enable the reset command
   //Debug.showTime(true); // To show time
   // Debug.showProfiler(true); // To show profiler - time between messages of Debug  
-
-  // initialize digital pin 13 as an output.
-  pinMode(13, OUTPUT);
 }
 
-void loop(void){
-  httpServer.handleClient();
-
-  if (Debug.ative(Debug.DEBUG)) {
-    Debug.println(count++);
-  }
-  //Blink LED
-  digitalWrite(13, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(500);              // wait for a second
-  digitalWrite(13, LOW);    // turn the LED off by making the voltage LOW
-  delay(500);              // wait for a second
-
-  // Remote debug over telnet
-  Debug.handle();
-}
