@@ -51,7 +51,24 @@ void loop(void){
   //YOUR LOOP CODE GOES HERE
   
   if (Debug.ative(Debug.DEBUG)) {
-    Debug.println(count++);
+//    Debug.println(count++);
+  }
+  
+  if (Debug.ative(Debug.DEBUG)) {
+    byte mac[6];
+    WiFi.macAddress(mac);
+    Debug.print("MAC: ");
+    Debug.print(mac[0],HEX);
+    Debug.print(":");
+    Debug.print(mac[1],HEX);
+    Debug.print(":");
+    Debug.print(mac[2],HEX);
+    Debug.print(":");
+    Debug.print(mac[3],HEX);
+    Debug.print(":");
+    Debug.print(mac[4],HEX);
+    Debug.print(":");
+    Debug.println(mac[5],HEX);
   }
   //Blink LED
   digitalWrite(13, HIGH);   // turn the LED on (HIGH is the voltage level)
