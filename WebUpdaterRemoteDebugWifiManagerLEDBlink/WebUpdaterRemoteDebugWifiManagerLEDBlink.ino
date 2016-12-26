@@ -51,7 +51,7 @@ void loop(void){
   //YOUR LOOP CODE GOES HERE
   
   if (Debug.ative(Debug.DEBUG)) {
-//    Debug.println(count++);
+    Debug.println(count++);
   }
   
   if (Debug.ative(Debug.DEBUG)) {
