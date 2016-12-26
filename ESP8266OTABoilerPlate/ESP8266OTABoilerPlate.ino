@@ -49,20 +49,20 @@ void loop(void){
   httpServer.handleClient();
 
   //YOUR LOOP CODE GOES HERE
-  
+  if (Debug.ative(Debug.DEBUG)) { 
     Debug.println(count++);
   }
   
   
   //Blink LED
   digitalWrite(13, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(500);              // wait for a second
+  delay(100);              // wait for a second
   digitalWrite(13, LOW);    // turn the LED off by making the voltage LOW
-  delay(500);              // wait for a second
+  delay(100);              // wait for a second
   digitalWrite(12, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(500);              // wait for a second
+  delay(250);              // wait for a second
   digitalWrite(12, LOW);    // turn the LED off by making the voltage LOW
-  delay(500);    
+  delay(250);    
   digitalWrite(15, HIGH);   // turn the LED on (HIGH is the voltage level)
   delay(500);              // wait for a second
   digitalWrite(15, LOW);    // turn the LED off by making the voltage LOW
