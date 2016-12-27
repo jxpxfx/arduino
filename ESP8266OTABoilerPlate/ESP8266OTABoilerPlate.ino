@@ -78,6 +78,8 @@ void setupNetwork() {
   //Wifi Manager
   WiFiManager wifiManager;
 
+    wifiManager.autoConnect();
+    //uncomment this line to reset/reconfigure wifi network
 //  wifiManager.startConfigPortal();
 
   MDNS.begin(host);
