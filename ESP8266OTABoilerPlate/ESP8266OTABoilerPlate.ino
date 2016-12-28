@@ -20,8 +20,11 @@
 
 //web update OTA
 const char* host = "esp8266-webupdate";
-//const char* ssid = "";
-//const char* password = "";
+//use this if you want to overwrite network settings
+//if you leave empty, it will use previously saved
+//if you add "wrong" or if it cannot connect, it will start ap mode
+const char* ssid = "";
+const char* password = "";
 
 ESP8266WebServer httpServer(80);
 ESP8266HTTPUpdateServer httpUpdater;
@@ -75,10 +78,12 @@ void loop(void){
 }
 
 void setupNetwork() {
+  WiFi.begin(ssid, password);
+
   //Wifi Manager
   WiFiManager wifiManager;
 
-    wifiManager.autoConnect();
+  wifiManager.autoConnect();
     //uncomment this line to reset/reconfigure wifi network
 //  wifiManager.startConfigPortal();
 
